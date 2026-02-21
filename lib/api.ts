@@ -16,20 +16,33 @@ export interface FetchNotesResponse {
   totalPages: number;
 }
 
-export interface FetchNotesParams {
+type FetchNotesParams = {
   page: number;
   perPage: number;
   search?: string;
-}
+  tag?: string;
+};
 
 export const fetchNotes = async ({
   page,
   perPage,
   search = '',
+  tag,
 }: FetchNotesParams): Promise<FetchNotesResponse> => {
+  const params: Record<string, unknown> = {
+    page,
+    perPage,
+    search,
+  };
+
+  if (tag && tag !== 'all') {
+    params.tag = tag;
+  }
+
   const { data } = await axios.get<FetchNotesResponse>('/notes', {
-    params: { page, perPage, search },
+    params,
   });
+
   return data;
 };
 
@@ -56,5 +69,20 @@ export const deleteNote = async (id: string): Promise<Note> => {
 export async function fetchNoteById(id: string): Promise<Note> {
   const { data } = await axios.get<Note>(`/notes/${id}`);
   return data;
+}
+
+export async function fetchNotesFilter(tag?: string) {
+  const params = new URLSearchParams();
+
+  if (tag && tag !== "all") {
+    params.append("tag", tag);
+  }
+
+  const res = await fetch(
+    `${process.env.API_URL}/notes?${params.toString()}`,
+    { cache: "no-store" }
+  );
+
+  return res.json();
 }
 
